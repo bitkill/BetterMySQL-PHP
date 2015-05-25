@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Custom Database Wrapper
  * @abstract Class to interact with mysqli.
@@ -35,21 +36,28 @@ trait DBextras // connection-independent tools
      * getQuery
      * returns query in string. for debug purposes.
      * use to debug runQuery statements
-     * @return {string}
+     * @return {string} $sql
      */
 
     public function getQuery()
     {
         $args = \func_get_args();
         if (\count($args) == 1){
-            echo (string) $args[0];
+            //echo (string) $args[0];
+            $sql = $args[0];
         } else {
-            $query = $args[0];
-            for($i=1; $i < count($args); $i++){
-                $query = \preg_replace('/[?]/', "'" . $args[$i] . "'" , $query, 1);
+            $sql = $args[0];
+            \array_shift($args);
+            foreach($args as $val) {
+                if (gettype($val) != "integer") {
+                    $sql = ($val != null ? \preg_replace('/[?]/', "'" . $val . "'", $sql, 1) : \preg_replace('/[?]/', 'null', $sql, 1));
+                } else {
+                    $sql = \preg_replace('/[?]/', $val, $sql, 1);
+
+                }
             }
-            return $query;
         }
+        return (string)$sql;
     }
     public function toJSON($stmt, $mode = DB_ASSOC)
     {
@@ -111,11 +119,13 @@ class Database
         } catch( Exception $e ) {
             return false;
         }
+        return true;
     }
     
     public function close()
     {
         if ($this->_link != null) { return $this->_link->close(); }
+        return false;
     }
     
     function __destruct()
